@@ -4,12 +4,12 @@
       "guildId": "761492874650583090",
       "joinedTimestamp": 1601624449211,
       "premiumSinceTimestamp": null,
-      "nickname": "Mike Oxlong",
+      "nickname": "Тайлен Дёрдер",
       "pending": false,
       "communicationDisabledUntilTimestamp": null,
       "userId": "353908601821069314",
       "avatar": null,
-      "displayName": "Mike Oxlong",
+      "displayName": "Тайлен Дёрдер",
       "roles": [
         "821023915073339404",
         "831439276310265886",
@@ -17,25 +17,7 @@
       ],
       "avatarURL": null,
       "displayAvatarURL": "https://cdn.discordapp.com/avatars/353908601821069314/a51bc947f03d312aa0b95699a918d13e.webp"
-    },
-    {
-      "guildId": "761492874650583090",
-      "joinedTimestamp": 1611748243535,
-      "premiumSinceTimestamp": null,
-      "nickname": "Сібал",
-      "pending": false,
-      "communicationDisabledUntilTimestamp": null,
-      "userId": "363307911507869697",
-      "avatar": null,
-      "displayName": "Сібал",
-      "roles": [
-        "785979482938277929",
-        "846075144292007947",
-        "761492874650583090"
-      ],
-      "avatarURL": null,
-      "displayAvatarURL": "https://cdn.discordapp.com/avatars/363307911507869697/3df67995e5d506f1b755be6e6c4ef3c6.webp"
     }
   ],
-  "lastMessageId": 105998
+  "lastMessageId": 152170
 }
