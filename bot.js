@@ -262,7 +262,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
       UpdatedChannel.members.forEach((VoiceUser) => {
         if (
           prevVoiceMembers &&
-          (VoiceUser == MovedUser || VoiceUser.user.id == MovedUser.userId) &&
+          (VoiceUser == MovedUser || VoiceUser.user.id == MovedUser?.userId) &&
           prevVoiceMembers.length < UpdatedChannel.members.size
         ) {
           UsersInChannel += `➕ ${

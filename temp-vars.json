@@ -1,23 +1,4 @@
 {
-  "prevVoiceMembers": [
-    {
-      "guildId": "761492874650583090",
-      "joinedTimestamp": 1601624449211,
-      "premiumSinceTimestamp": null,
-      "nickname": "Тайлен Дёрдер",
-      "pending": false,
-      "communicationDisabledUntilTimestamp": null,
-      "userId": "353908601821069314",
-      "avatar": null,
-      "displayName": "Тайлен Дёрдер",
-      "roles": [
-        "821023915073339404",
-        "831439276310265886",
-        "761492874650583090"
-      ],
-      "avatarURL": null,
-      "displayAvatarURL": "https://cdn.discordapp.com/avatars/353908601821069314/a51bc947f03d312aa0b95699a918d13e.webp"
-    }
-  ],
-  "lastMessageId": 152170
+  "prevVoiceMembers": [],
+  "lastMessageId": 152325
 }
