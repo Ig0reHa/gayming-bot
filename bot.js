@@ -294,6 +294,9 @@ client.on("voiceStateUpdate", (oldState, newState) => {
 
 client.login(token);
 
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
 // if (prevVoiceMembers) {
 //     if (prevVoiceMembers.size > UpdatedChannel.members.size) {
 //         prevVoiceMembers.forEach((VoiceUser, VoiceUserKey) => {
