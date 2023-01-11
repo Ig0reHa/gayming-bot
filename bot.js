@@ -12,9 +12,8 @@
 
 require("dotenv").config();
 
-const { Telegraf, Telegram } = require("telegraf");
+const { Telegraf } = require("telegraf");
 
-const tgBot = new Telegram(process.env.BOT_TOKEN);
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Libs import
@@ -43,7 +42,7 @@ bot.on(["message", "channel_post"], (ctx) => {
       ctx.reply(`@${ctx.message.from.username}, ты еблан из кб кидать ?`);
     }
 
-    tgBot.deleteMessage(ctx.message.chat.id, ctx.message.message_id);
+    bot.telegram.deleteMessage(ctx.message.chat.id, ctx.message.message_id);
   }
 
   if (ctx.message.hasOwnProperty("text")) {
@@ -109,7 +108,7 @@ bot.on(["message", "channel_post"], (ctx) => {
         gameThumbnails[0].caption = gameTitles;
         gameThumbnails[0].parse_mode = "HTML";
 
-        await tgBot.sendMediaGroup(ctx.message.chat.id, gameThumbnails);
+        await bot.telegram.sendMediaGroup(ctx.message.chat.id, gameThumbnails);
 
         // Будущие бесплатные игры
 
@@ -126,7 +125,7 @@ bot.on(["message", "channel_post"], (ctx) => {
         gameThumbnails[0].caption = gameTitles;
         gameThumbnails[0].parse_mode = "HTML";
 
-        await tgBot.sendMediaGroup(ctx.message.chat.id, gameThumbnails);
+        await bot.telegram.sendMediaGroup(ctx.message.chat.id, gameThumbnails);
       })
       .catch((err) => {
         console.log(`epicFreeGames - error \n${err}`);
