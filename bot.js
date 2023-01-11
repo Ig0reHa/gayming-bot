@@ -1,12 +1,12 @@
 // Heroku port setup
 
-const http = require("http");
-const PORT = process.env.PORT || 3000;
-const server = http.createServer((req, res) => {});
+// const http = require("http");
+// const PORT = process.env.PORT || 3000;
+// const server = http.createServer((req, res) => {});
 
-server.listen(PORT, () => {
-  console.log(`Our app is running on port ${PORT}`);
-});
+// server.listen(PORT, () => {
+//   console.log(`Our app is running on port ${PORT}`);
+// });
 
 // Telegram Bot
 
@@ -21,8 +21,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const GamesToPlay = require("./data.js");
 const epicFreeGames = require("epic-free-games");
-
-const nconf = require("nconf");
+const fs = require("fs");
 
 // Start message
 
@@ -146,7 +145,6 @@ bot.on(["message", "channel_post"], (ctx) => {
 bot.launch();
 
 const { Client, GatewayIntentBits } = require("discord.js");
-const { log } = require("console");
 
 const token = process.env.DISCORD_TOKEN;
 
@@ -191,6 +189,11 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+let temp = {
+  prevVoiceMembers: null,
+  lastMessageId: null,
+};
+
 client.on("voiceStateUpdate", (oldState, newState) => {
   let UpdatedChannel = newState.channel ? newState.channel : oldState.channel;
 
@@ -199,137 +202,113 @@ client.on("voiceStateUpdate", (oldState, newState) => {
     UpdatedChannel &&
     UpdatedChannel.name == "Основной"
   ) {
-    nconf.use("file", { file: "./temp-vars.json" });
-    nconf.load(function (err) {
-      const prevVoiceMembers = nconf.get("prevVoiceMembers");
-      const lastMessageId = nconf.get("lastMessageId");
+    const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
+    const prevVoiceMembers = tempFile?.prevVoiceMembers;
+    const lastMessageId = tempFile?.lastMessageId;
 
-      let UsersInChannel = "Сейчас в дискорде:\n\n";
-      let MovedUser;
+    let TextOutput = "Сейчас в дискорде:\n\n";
+    let addedUser = null;
+    let removedUser = null;
+    let MovedUser;
 
-      // if (prevVoiceMembers) {
-      //     if (prevVoiceMembers.size > UpdatedChannel.members.size) {
-      //         prevVoiceMembers.forEach((VoiceUser, VoiceUserKey) => {
-      //             if (!UpdatedChannel.members.has(VoiceUserKey)) {
-      //                 console.log(`${VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username} left`);
-      //                 MovedUser = VoiceUser;
-      //             }
-      //         });
-      //     } else if (prevVoiceMembers.size < UpdatedChannel.members.size) {
-      //         UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
-      //             if (!prevVoiceMembers.has(VoiceUserKey)) {
-      //                 console.log(`${VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username} joined`);
-      //                 MovedUser = VoiceUser;
-      //             }
-      //         });
-      //     }
-      // }
+    if (prevVoiceMembers) {
+      if (prevVoiceMembers.length > UpdatedChannel.members.size) {
+        prevVoiceMembers.forEach((VoiceUser) => {
+          if (!UpdatedChannel.members.has(VoiceUser.userId)) {
+            console.log(
+              `${
+                VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.displayName
+              } left`
+            );
 
-      if (prevVoiceMembers) {
-        if (prevVoiceMembers.length > UpdatedChannel.members.size) {
-          prevVoiceMembers.forEach((VoiceUser) => {
-            if (!UpdatedChannel.members.has(VoiceUser.userId)) {
-              console.log(
-                `${
-                  VoiceUser.nickname
-                    ? VoiceUser.nickname
-                    : VoiceUser.displayName
-                } left`
-              );
-              MovedUser = VoiceUser;
-            }
-          });
-        } else if (prevVoiceMembers.length < UpdatedChannel.members.size) {
-          UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
-            if (
-              !prevVoiceMembers.some(
-                (prevVoiceUser) => prevVoiceUser.userId == VoiceUserKey
-              )
-            ) {
-              console.log(
-                `${
-                  VoiceUser.nickname
-                    ? VoiceUser.nickname
-                    : VoiceUser.user.username
-                } joined`
-              );
-              MovedUser = VoiceUser;
-            }
-          });
-        }
+            removedUser = `\n➖ ${
+              VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.displayName
+            }`;
+
+            MovedUser = VoiceUser;
+          }
+        });
+      } else if (prevVoiceMembers.length < UpdatedChannel.members.size) {
+        UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
+          if (
+            !prevVoiceMembers.some(
+              (prevVoiceUser) => prevVoiceUser.userId == VoiceUserKey
+            )
+          ) {
+            console.log(
+              `${
+                VoiceUser.nickname
+                  ? VoiceUser.nickname
+                  : VoiceUser.user.username
+              } joined`
+            );
+
+            addedUser = `➕ ${
+              VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username
+            }\n\n`;
+
+            MovedUser = VoiceUser;
+          }
+        });
       }
 
+      TextOutput += addedUser ? addedUser : "";
+
       UpdatedChannel.members.forEach((VoiceUser) => {
-        if (
-          prevVoiceMembers &&
-          (VoiceUser == MovedUser || VoiceUser.user.id == MovedUser?.userId) &&
-          prevVoiceMembers.length < UpdatedChannel.members.size
-        ) {
-          UsersInChannel += `➕ ${
-            VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username
-          }\n`;
-        } else {
-          UsersInChannel += `${
+        if (VoiceUser.id != MovedUser.id) {
+          TextOutput += `${
             VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username
           }\n`;
         }
       });
 
-      if (
-        prevVoiceMembers &&
-        prevVoiceMembers.length > UpdatedChannel.members.size
-      ) {
-        if (MovedUser.userId) {
-          UsersInChannel += `\n➖ ${
-            MovedUser.nickname ? MovedUser.nickname : MovedUser.displayName
-          }`;
-        } else {
-          UsersInChannel += `\n➖ ${
-            MovedUser.nickname ? MovedUser.nickname : MovedUser.user.username
-          }`;
-        }
-      }
+      TextOutput += removedUser ? removedUser : "";
+    }
 
-      // If all users left voice
+    // If all users left voice
 
-      if (UpdatedChannel.members.size == 0) {
-        UsersInChannel = "Все вышли из дискорда 😴";
-      }
+    if (UpdatedChannel.members.size == 0) {
+      TextOutput = "Все вышли из дискорда 😴";
+    }
 
-      bot.telegram
-        .sendMessage("-1001217699907", UsersInChannel, { parse_mode: "HTML" })
-        .then(
-          function (msg) {
-            if (lastMessageId) {
-              bot.telegram.deleteMessage("-1001217699907", lastMessageId);
-            }
-
-            nconf.set("lastMessageId", msg.message_id);
-          },
-          function (fail) {
-            console.log(fail);
+    bot.telegram
+      .sendMessage("-1001217699907", TextOutput, { parse_mode: "HTML" })
+      .then(
+        function (msg) {
+          if (lastMessageId) {
+            bot.telegram.deleteMessage("-1001217699907", lastMessageId);
           }
-        )
-        .then(function () {
-          // bot.telegram.deleteMessage('425848093', lastMessageId);
-          // bot.telegram.sendMessage('-1001217699907', UsersInChannel);
 
-          nconf.set("prevVoiceMembers", UpdatedChannel.members);
+          temp.lastMessageId = msg.message_id;
+        },
+        function (fail) {
+          console.log(fail);
+        }
+      )
+      .then(function () {
+        temp.prevVoiceMembers = UpdatedChannel.members;
 
-          nconf.save(function (err) {
-            if (err) {
-              console.error(err.message);
-              return;
-            }
-          });
-        });
-
-      if (err) {
-        console.error(err.message);
-        return;
-      }
-    });
+        fs.writeFileSync("./temp.json", JSON.stringify(temp, null, 2));
+      });
   }
 });
 
 client.login(token);
+
+// if (prevVoiceMembers) {
+//     if (prevVoiceMembers.size > UpdatedChannel.members.size) {
+//         prevVoiceMembers.forEach((VoiceUser, VoiceUserKey) => {
+//             if (!UpdatedChannel.members.has(VoiceUserKey)) {
+//                 console.log(`${VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username} left`);
+//                 MovedUser = VoiceUser;
+//             }
+//         });
+//     } else if (prevVoiceMembers.size < UpdatedChannel.members.size) {
+//         UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
+//             if (!prevVoiceMembers.has(VoiceUserKey)) {
+//                 console.log(`${VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username} joined`);
+//                 MovedUser = VoiceUser;
+//             }
+//         });
+//     }
+// }
