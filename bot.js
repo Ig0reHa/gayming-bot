@@ -21,6 +21,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const GamesToPlay = require("./data.js");
 const epicFreeGames = require("epic-free-games");
 const fs = require("fs");
+fs.writeFileSync("./temp.json", "{}");
 
 // Start message
 
@@ -199,7 +200,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
   if (
     !(newState.channel && oldState.channel) &&
     UpdatedChannel &&
-    UpdatedChannel.name == "Основной"
+    UpdatedChannel.id == "834469105414569995"
   ) {
     const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
     const prevVoiceMembers = tempFile?.prevVoiceMembers;
@@ -214,15 +215,9 @@ client.on("voiceStateUpdate", (oldState, newState) => {
       if (prevVoiceMembers.length > UpdatedChannel.members.size) {
         prevVoiceMembers.forEach((VoiceUser) => {
           if (!UpdatedChannel.members.has(VoiceUser.userId)) {
-            console.log(
-              `${
-                VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.displayName
-              } left`
-            );
+            console.log(`${VoiceUser.nickname || VoiceUser.displayName} left`);
 
-            removedUser = `\n➖ ${
-              VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.displayName
-            }`;
+            removedUser = `\n➖ ${VoiceUser.nickname || VoiceUser.displayName}`;
 
             MovedUser = VoiceUser;
           }
@@ -235,15 +230,11 @@ client.on("voiceStateUpdate", (oldState, newState) => {
             )
           ) {
             console.log(
-              `${
-                VoiceUser.nickname
-                  ? VoiceUser.nickname
-                  : VoiceUser.user.username
-              } joined`
+              `${VoiceUser.nickname || VoiceUser.user.username} joined`
             );
 
             addedUser = `➕ ${
-              VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username
+              VoiceUser.nickname || VoiceUser.user.username
             }\n\n`;
 
             MovedUser = VoiceUser;
@@ -251,17 +242,21 @@ client.on("voiceStateUpdate", (oldState, newState) => {
         });
       }
 
-      TextOutput += addedUser ? addedUser : "";
+      TextOutput += addedUser || "";
 
       UpdatedChannel.members.forEach((VoiceUser) => {
         if (VoiceUser.id != MovedUser.id) {
-          TextOutput += `${
-            VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username
-          }\n`;
+          TextOutput += `${VoiceUser.nickname || VoiceUser.user.username}\n`;
         }
       });
 
-      TextOutput += removedUser ? removedUser : "";
+      TextOutput += removedUser || "";
+    } else {
+      if (UpdatedChannel.members.size != 0) {
+        UpdatedChannel.members.forEach((VoiceUser) => {
+          TextOutput += `${VoiceUser.nickname || VoiceUser.user.username}\n`;
+        });
+      }
     }
 
     // If all users left voice
@@ -275,7 +270,11 @@ client.on("voiceStateUpdate", (oldState, newState) => {
       .then(
         function (msg) {
           if (lastMessageId) {
-            bot.telegram.deleteMessage("-1001217699907", lastMessageId);
+            try {
+              bot.telegram.deleteMessage("-1001217699907", lastMessageId);
+            } catch (error) {
+              console.log(`Error deleting message ${lastMessageId}`);
+            }
           }
 
           temp.lastMessageId = msg.message_id;
