@@ -1,1 +1,39 @@
-{}
+{
+  "prevVoiceMembers": [
+    {
+      "guildId": "761492874650583090",
+      "joinedTimestamp": 1601624449211,
+      "premiumSinceTimestamp": null,
+      "nickname": "HANS SIGMA",
+      "pending": false,
+      "communicationDisabledUntilTimestamp": null,
+      "userId": "353908601821069314",
+      "avatar": "f95d6ec39e486134ffb47249875a7389",
+      "displayName": "HANS SIGMA",
+      "roles": [
+        "821023915073339404",
+        "761492874650583090"
+      ],
+      "avatarURL": "https://cdn.discordapp.com/guilds/761492874650583090/users/353908601821069314/avatars/f95d6ec39e486134ffb47249875a7389.webp",
+      "displayAvatarURL": "https://cdn.discordapp.com/guilds/761492874650583090/users/353908601821069314/avatars/f95d6ec39e486134ffb47249875a7389.webp"
+    },
+    {
+      "guildId": "761492874650583090",
+      "joinedTimestamp": 1611748243535,
+      "premiumSinceTimestamp": null,
+      "nickname": "Никита",
+      "pending": false,
+      "communicationDisabledUntilTimestamp": null,
+      "userId": "363307911507869697",
+      "avatar": null,
+      "displayName": "Никита",
+      "roles": [
+        "1071205854352785449",
+        "761492874650583090"
+      ],
+      "avatarURL": null,
+      "displayAvatarURL": "https://cdn.discordapp.com/avatars/363307911507869697/02a1178a59b8b0653627f70ac809d080.webp"
+    }
+  ],
+  "lastMessageId": 204890
+}
