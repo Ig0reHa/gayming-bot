@@ -26,39 +26,49 @@ fs.writeFileSync("./temp.json", "{}");
 
 bot.start((ctx) => ctx.reply("Слава Україні!"));
 
-bot.on(["message", "channel_post"], (ctx) => {
-  if (
-    ctx.message.hasOwnProperty("forward_from_chat") &&
-    (ctx.message.forward_from_chat.title.toLowerCase().includes("топор") ||
-      ctx.message.forward_from_chat.title.toLowerCase().includes("кб"))
-  ) {
-    if (ctx.message.forward_from_chat.title.toLowerCase().includes("топор")) {
-      ctx.reply(`@${ctx.message.from.username}, ты еблан из топора кидать ?`);
+bot.on(["message", "channel_post"], async (ctx) => {
+  const hasKB = ctx.message.forward_from_chat.title
+    .toLowerCase()
+    .includes("кб");
+  const hasTopor = ctx.message.forward_from_chat.title
+    .toLowerCase()
+    .includes("топор");
+
+  if (ctx.message.hasOwnProperty("forward_from_chat") && (hasTopor || hasKB)) {
+    if (hasTopor) {
+      await ctx.reply(
+        `@${ctx.message.from.username}, ты еблан из топора кидать ?`
+      );
     } else {
-      ctx.reply(`@${ctx.message.from.username}, ты еблан из кб кидать ?`);
+      await ctx.reply(`@${ctx.message.from.username}, ты еблан из кб кидать ?`);
     }
 
-    bot.telegram.deleteMessage(ctx.message.chat.id, ctx.message.message_id);
+    await bot.telegram.deleteMessage(
+      ctx.message.chat.id,
+      ctx.message.message_id
+    );
   }
 
   if (ctx.message.hasOwnProperty("text")) {
     switch (ctx.message.text.toLowerCase()) {
       case "во що пограти":
-        ctx.reply(
+        await ctx.reply(
           `У ${GamesToPlay[Math.floor(Math.random() * GamesToPlay.length)]}`,
           { reply_to_message_id: ctx.message.message_id }
         );
         break;
       case "🤡":
-        ctx.reply(`${ctx.message.from.first_name}, сам ти клоун`, {
+        await ctx.reply(`${ctx.message.from.first_name}, сам ти клоун`, {
           reply_to_message_id: ctx.message.message_id,
         });
         break;
       case "да":
-        ctx.reply(`Пізда`, { reply_to_message_id: ctx.message.message_id });
+        await ctx.reply(`Пізда`, {
+          reply_to_message_id: ctx.message.message_id,
+        });
         break;
       case "нет":
-        ctx.reply(`Підора отвєт`, {
+        await ctx.reply(`Підора отвєт`, {
           reply_to_message_id: ctx.message.message_id,
         });
         break;
@@ -74,36 +84,50 @@ bot.on(["message", "channel_post"], (ctx) => {
     epicFreeGames
       .getGames("US", true)
       .then(async (res) => {
-        console.log(res);
-        let gameTitles = "Сьогодні безкоштовно:\n";
-        let gameThumbnails = [];
+        let gameTitlesNow = "Сьогодні безкоштовно:\n";
+        let gameThumbnailsNow = [];
 
         for (let i = 0; i < res.currentGames.length; i++) {
           const game = res.currentGames[i];
 
-          gameTitles += `\n<a href="https://store.epicgames.com/en-US/p/${game.catalogNs.mappings[0].pageSlug}">${game.title}</a>`;
-          gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
+          gameTitlesNow += `\n<a href="https://store.epicgames.com/en-US/p/${game.catalogNs.mappings[0].pageSlug}">${game.title}</a>`;
+          gameThumbnailsNow.push({
+            type: "photo",
+            media: game.keyImages[0].url,
+          });
         }
 
-        gameThumbnails[0].caption = gameTitles;
-        gameThumbnails[0].parse_mode = "HTML";
+        gameThumbnailsNow[0].caption = gameTitlesNow;
+        gameThumbnailsNow[0].parse_mode = "HTML";
 
-        await bot.telegram.sendMediaGroup(ctx.message.chat.id, gameThumbnails);
+        // --------------------------------------------
 
-        gameTitles = "Незбаром буде безкоштовно:\n";
-        gameThumbnails = [];
+        let gameTitlesComing = "Незбаром буде безкоштовно:\n";
+        let gameThumbnailsComing = [];
 
         for (let i = 0; i < res.nextGames.length; i++) {
           const game = res.nextGames[i];
 
-          gameTitles += `\n<a href="https://store.epicgames.com/en-US/p/${game.catalogNs.mappings[0].pageSlug}">${game.title}</a>`;
-          gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
+          gameTitlesComing += `\n<a href="https://store.epicgames.com/en-US/p/${game.catalogNs.mappings[0].pageSlug}">${game.title}</a>`;
+          gameThumbnailsComing.push({
+            type: "photo",
+            media: game.keyImages[0].url,
+          });
         }
 
-        gameThumbnails[0].caption = gameTitles;
-        gameThumbnails[0].parse_mode = "HTML";
+        gameThumbnailsComing[0].caption = gameTitlesComing;
+        gameThumbnailsComing[0].parse_mode = "HTML";
 
-        await bot.telegram.sendMediaGroup(ctx.message.chat.id, gameThumbnails);
+        const sendFreeGamesNow = bot.telegram.sendMediaGroup(
+          ctx.message.chat.id,
+          gameThumbnailsNow
+        );
+        const sendFreeGamesComing = bot.telegram.sendMediaGroup(
+          ctx.message.chat.id,
+          gameThumbnailsComing
+        );
+
+        await Promise.all([sendFreeGamesNow, sendFreeGamesComing]);
       })
       .catch((err) => {
         console.log(`epicFreeGames - error \n${err}`);
@@ -175,15 +199,15 @@ const displayUser = (VoiceUser) => {
   return userText;
 };
 
-client.on("voiceStateUpdate", (oldState, newState) => {
+client.on("voiceStateUpdate", async (oldState, newState) => {
   let UpdatedChannel = newState.channel || oldState.channel;
-  if (!UpdatedChannel) return;
+  if (!UpdatedChannel || UpdatedChannel.id != "834469105414569995") return;
 
-  console.log("old", oldState.channel, "new", newState);
+  console.log("oldState", oldState.channel, "newState", newState.channel);
 
   const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
-  const prevVoiceMembers = tempFile?.prevVoiceMembers;
-  const lastMessageId = tempFile?.lastMessageId;
+  const prevVoiceMembers = temp.prevVoiceMembers || tempFile?.prevVoiceMembers;
+  const lastMessageId = temp.lastMessageId || tempFile?.lastMessageId;
 
   let TextOutput = "Зараз у дискорді:\n\n";
   let addedUser = null;
@@ -197,7 +221,6 @@ client.on("voiceStateUpdate", (oldState, newState) => {
           console.log(`${displayUser(VoiceUser)} left`);
 
           removedUser = `\n➖ ${displayUser(VoiceUser)}`;
-
           MovedUser = VoiceUser;
         }
       });
@@ -211,7 +234,6 @@ client.on("voiceStateUpdate", (oldState, newState) => {
           console.log(`${displayUser(VoiceUser)} joined`);
 
           addedUser = `➕ ${displayUser(VoiceUser)}\n`;
-
           MovedUser = VoiceUser;
         }
       });
@@ -239,29 +261,29 @@ client.on("voiceStateUpdate", (oldState, newState) => {
     TextOutput = "Дискорд спить 😴";
   }
 
-  bot.telegram
-    .sendMessage("-1001217699907", TextOutput, { parse_mode: "HTML" })
-    .then(
-      function (msg) {
-        if (lastMessageId) {
-          try {
-            bot.telegram.deleteMessage("-1001217699907", lastMessageId);
-          } catch (error) {
-            console.log(`Error deleting message ${lastMessageId}`);
-          }
-        }
-
-        temp.lastMessageId = msg.message_id;
-      },
-      function (fail) {
-        console.log(fail);
-      }
-    )
-    .then(function () {
-      temp.prevVoiceMembers = UpdatedChannel.members;
-
-      fs.writeFileSync("./temp.json", JSON.stringify(temp, null, 2));
+  try {
+    const messageSend = bot.telegram.sendMessage("-1001217699907", TextOutput, {
+      parse_mode: "HTML",
     });
+
+    if (lastMessageId) {
+      const messageDelete = bot.telegram.deleteMessage(
+        "-1001217699907",
+        lastMessageId
+      );
+
+      const promiseRes = await Promise.all([messageSend, messageDelete]);
+      temp.lastMessageId = promiseRes[0].message_id;
+    } else {
+      const promiseRes = await messageSend;
+      temp.lastMessageId = promiseRes.message_id;
+    }
+
+    temp.prevVoiceMembers = UpdatedChannel.members;
+    fs.writeFileSync("./temp.json", JSON.stringify(temp, null, 2));
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 client.login(token);
