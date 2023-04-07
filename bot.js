@@ -206,8 +206,8 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
   console.log("oldState", oldState.channel, "newState", newState.channel);
 
   const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
-  const prevVoiceMembers = temp.prevVoiceMembers || tempFile?.prevVoiceMembers;
-  const lastMessageId = temp.lastMessageId || tempFile?.lastMessageId;
+  const prevVoiceMembers = tempFile?.prevVoiceMembers;
+  const lastMessageId = tempFile?.lastMessageId;
 
   let TextOutput = "Зараз у дискорді:\n\n";
   let addedUser = null;
