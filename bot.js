@@ -69,28 +69,8 @@ const sendFreeGames = (chatId) => {
     });
 };
 
-const regex_emoji =
-  /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/u;
-
 bot.on(["message", "edited_message"], (ctx) => {
-  if (ctx?.update?.edited_message?.hasOwnProperty("text")) {
-    if (regex_emoji.test(ctx.update.edited_message.text)) {
-      bot.telegram.deleteMessage(
-        "-1001217699907",
-        ctx.update.edited_message.message_id
-      );
-    }
-  }
-
-  if (ctx?.message?.animation || ctx?.message?.sticker) {
-    bot.telegram.deleteMessage("-1001217699907", ctx.message.message_id);
-  }
-
   if (ctx.message?.hasOwnProperty("text")) {
-    if (regex_emoji.test(ctx.message.text)) {
-      bot.telegram.deleteMessage("-1001217699907", ctx.message.message_id);
-    }
-
     switch (ctx.message.text.toLowerCase()) {
       case "во що пограти":
         ctx.reply(
@@ -283,21 +263,3 @@ client.login(token);
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
-
-// if (prevVoiceMembers) {
-//     if (prevVoiceMembers.size > UpdatedChannel.members.size) {
-//         prevVoiceMembers.forEach((VoiceUser, VoiceUserKey) => {
-//             if (!UpdatedChannel.members.has(VoiceUserKey)) {
-//                 console.log(`${VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username} left`);
-//                 MovedUser = VoiceUser;
-//             }
-//         });
-//     } else if (prevVoiceMembers.size < UpdatedChannel.members.size) {
-//         UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
-//             if (!prevVoiceMembers.has(VoiceUserKey)) {
-//                 console.log(`${VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username} joined`);
-//                 MovedUser = VoiceUser;
-//             }
-//         });
-//     }
-// }
