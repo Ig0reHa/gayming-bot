@@ -13,7 +13,6 @@ server.listen(PORT, () => {
 require("dotenv").config();
 
 const { Telegraf } = require("telegraf");
-
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Libs import
@@ -25,112 +24,101 @@ fs.writeFileSync("./temp.json", "{}");
 
 // Start message
 
-bot.start((ctx) =>
-  ctx.reply(
-    `Привет, ${ctx.message.from.first_name}!\nНадеюсь ты не будешь кидать ничего из хуёвых каналов.`
-  )
-); //ответ бота на команду /start
+bot.start((ctx) => ctx.reply("Слава Україні!"));
 
-bot.on(["message", "channel_post"], (ctx) => {
-  if (
-    ctx.message.hasOwnProperty("forward_from_chat") &&
-    (ctx.message.forward_from_chat.title.toLowerCase().includes("топор") ||
-      ctx.message.forward_from_chat.title.toLowerCase().includes("кб"))
-  ) {
-    if (ctx.message.forward_from_chat.title.toLowerCase().includes("топор")) {
-      ctx.reply(`@${ctx.message.from.username}, ты еблан из топора кидать ?`);
-    } else {
-      ctx.reply(`@${ctx.message.from.username}, ты еблан из кб кидать ?`);
+const sendFreeGames = (chatId) => {
+  epicFreeGames
+    .getGames("US", true)
+    .then(async (res) => {
+      // Бесплатные игры на сегодня
+
+      let gameTitles = "Сьогодні безкоштовно:\n";
+      let gameThumbnails = [];
+
+      for (let i = 0; i < res.currentGames.length; i++) {
+        const game = res.currentGames[i];
+
+        gameTitles += `\n<a href="https://store.epicgames.com/en-US/p/${game.productSlug}">${game.title}</a>`;
+        gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
+      }
+
+      gameThumbnails[0].caption = gameTitles;
+      gameThumbnails[0].parse_mode = "HTML";
+
+      await bot.telegram.sendMediaGroup(chatId, gameThumbnails);
+
+      // Будущие бесплатные игры
+
+      gameTitles = "Незбаром буде безкоштовно:\n";
+      gameThumbnails = [];
+
+      for (let i = 0; i < res.nextGames.length; i++) {
+        const game = res.nextGames[i];
+
+        gameTitles += `\n<a href="https://store.epicgames.com/en-US/p/${game.productSlug}">${game.title}</a>`;
+        gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
+      }
+
+      gameThumbnails[0].caption = gameTitles;
+      gameThumbnails[0].parse_mode = "HTML";
+
+      await bot.telegram.sendMediaGroup(chatId, gameThumbnails);
+    })
+    .catch((err) => {
+      console.log(`epicFreeGames - error \n${err}`);
+    });
+};
+
+const regex_emoji =
+  /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/u;
+
+bot.on(["message", "edited_message"], (ctx) => {
+  if (ctx?.update?.edited_message?.hasOwnProperty("text")) {
+    if (regex_emoji.test(ctx.update.edited_message.text)) {
+      bot.telegram.deleteMessage(
+        "-1001217699907",
+        ctx.update.edited_message.message_id
+      );
     }
-
-    bot.telegram.deleteMessage(ctx.message.chat.id, ctx.message.message_id);
   }
 
-  if (ctx.message.hasOwnProperty("text")) {
+  if (ctx?.message?.animation || ctx?.message?.sticker) {
+    bot.telegram.deleteMessage("-1001217699907", ctx.message.message_id);
+  }
+
+  if (ctx.message?.hasOwnProperty("text")) {
+    if (regex_emoji.test(ctx.message.text)) {
+      bot.telegram.deleteMessage("-1001217699907", ctx.message.message_id);
+    }
+
     switch (ctx.message.text.toLowerCase()) {
-      case "во что поиграть":
+      case "во що пограти":
         ctx.reply(
-          `В ${GamesToPlay[Math.floor(Math.random() * GamesToPlay.length)]}`,
+          `У ${GamesToPlay[Math.floor(Math.random() * GamesToPlay.length)]}`,
           { reply_to_message_id: ctx.message.message_id }
         );
         break;
       case "🤡":
-        ctx.reply(`${ctx.message.from.first_name}, сам ты клоун`, {
+        ctx.reply(`${ctx.message.from.first_name}, сам ти клоун`, {
           reply_to_message_id: ctx.message.message_id,
         });
         break;
       case "да":
-        ctx.reply(`Пизда`, { reply_to_message_id: ctx.message.message_id });
+        ctx.reply(`Пізда`, {
+          reply_to_message_id: ctx.message.message_id,
+        });
         break;
       case "нет":
-        ctx.reply(`Пидора ответ`, {
-          reply_to_message_id: ctx.message.message_id,
-        });
-        break;
-      case "шлюхи аргумент":
-        ctx.reply(`Аргумент не нужен, пидор обнаружен!`, {
-          reply_to_message_id: ctx.message.message_id,
-        });
-        break;
-      case "аргумент не вечен, пидор обеспечен":
-        ctx.reply(`Пидор засекречен, твой анал не вечен)))))`, {
-          reply_to_message_id: ctx.message.message_id,
-        });
-        break;
-      case "пидор мафиозный, твой анал спидозный xd":
-        ctx.reply(`Анал мой вечен, твой помечен)`, {
+        ctx.reply(`Підора отвєт`, {
           reply_to_message_id: ctx.message.message_id,
         });
         break;
       default:
         break;
     }
-  }
 
-  if (
-    ctx.message.hasOwnProperty("text") &&
-    ctx.message.text.toLowerCase().includes("халява")
-  ) {
-    epicFreeGames
-      .getGames("US", true)
-      .then(async (res) => {
-        // Бесплатные игры на сегодня
-
-        let gameTitles = "Сегодня бесплатно:\n";
-        let gameThumbnails = [];
-
-        for (let i = 0; i < res.currentGames.length; i++) {
-          const game = res.currentGames[i];
-
-          gameTitles += `\n<a href="https://store.epicgames.com/ru/p/${game.catalogNs.mappings[0].pageSlug}">${game.title}</a>`;
-          gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
-        }
-
-        gameThumbnails[0].caption = gameTitles;
-        gameThumbnails[0].parse_mode = "HTML";
-
-        await bot.telegram.sendMediaGroup(ctx.message.chat.id, gameThumbnails);
-
-        // Будущие бесплатные игры
-
-        gameTitles = "Скоро будет бесплатно:\n";
-        gameThumbnails = [];
-
-        for (let i = 0; i < res.nextGames.length; i++) {
-          const game = res.nextGames[i];
-
-          gameTitles += `\n<a href="https://store.epicgames.com/ru/p/${game.catalogNs.mappings[0].pageSlug}">${game.title}</a>`;
-          gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
-        }
-
-        gameThumbnails[0].caption = gameTitles;
-        gameThumbnails[0].parse_mode = "HTML";
-
-        await bot.telegram.sendMediaGroup(ctx.message.chat.id, gameThumbnails);
-      })
-      .catch((err) => {
-        console.log(`epicFreeGames - error \n${err}`);
-      });
+    ctx.message.text.toLowerCase().includes("халява") &&
+      sendFreeGames(ctx.message.chat.id);
   }
 
   // Bulling
@@ -206,7 +194,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
     const prevVoiceMembers = tempFile?.prevVoiceMembers;
     const lastMessageId = tempFile?.lastMessageId;
 
-    let TextOutput = "Сейчас в дискорде:\n\n";
+    let TextOutput = "Зараз у дискорді:\n\n";
     let addedUser = null;
     let removedUser = null;
     let MovedUser;
@@ -262,7 +250,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
     // If all users left voice
 
     if (UpdatedChannel.members.size == 0) {
-      TextOutput = "Все вышли из дискорда 😴";
+      TextOutput = "Дискорд спить 😴";
     }
 
     bot.telegram
