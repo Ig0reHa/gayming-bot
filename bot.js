@@ -120,14 +120,6 @@ bot.on(["message", "edited_message"], (ctx) => {
     ctx.message.text.toLowerCase().includes("халява") &&
       sendFreeGames(ctx.message.chat.id);
   }
-
-  // Bulling
-
-  // if (ctx.message.hasOwnProperty('from') && ( ctx.message.from.username == 'sanchezszs' || ctx.message.from.username == 'littheagent' ) ) {
-  //     ctx.reply(`🤡`, { reply_to_message_id: ctx.message.message_id });
-  // }
-
-  // Назар id - 429928542
 });
 
 bot.launch();
@@ -172,8 +164,6 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply(
       `Your tag: ${interaction.user.tag}\nYour id: ${interaction.user.id}`
     );
-  } else if (commandName === "voice") {
-    await interaction.reply(`Voice info: none`);
   }
 });
 
@@ -182,69 +172,99 @@ let temp = {
   lastMessageId: null,
 };
 
-client.on("voiceStateUpdate", (oldState, newState) => {
-  let UpdatedChannel = newState.channel ? newState.channel : oldState.channel;
+const displayUser = (VoiceUser) => {
+  let userText = "";
+  userText += `${VoiceUser.nickname || VoiceUser.user.username}`;
+  if (VoiceUser?.voice?.selfMute || VoiceUser?.voice?.serverMute)
+    userText += " 🔇";
+  if (VoiceUser?.voice?.selfDeaf || VoiceUser?.voice?.serverDeaf)
+    userText += " 🙉";
+  if (VoiceUser?.voice?.selfVideo) userText += " 📷";
+  if (VoiceUser?.voice?.streaming) userText += " 🖥";
+  userText += "\n";
 
-  if (
-    !(newState.channel && oldState.channel) &&
-    UpdatedChannel &&
-    UpdatedChannel.id == "834469105414569995"
-  ) {
-    const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
-    const prevVoiceMembers = tempFile?.prevVoiceMembers;
-    const lastMessageId = tempFile?.lastMessageId;
+  return userText;
+};
 
     let TextOutput = "Зараз у дискорді:\n\n";
     let addedUser = null;
     let removedUser = null;
     let MovedUser;
 
-    if (prevVoiceMembers) {
-      if (prevVoiceMembers.length > UpdatedChannel.members.size) {
-        prevVoiceMembers.forEach((VoiceUser) => {
-          if (!UpdatedChannel.members.has(VoiceUser.userId)) {
-            console.log(`${VoiceUser.nickname || VoiceUser.displayName} left`);
+  console.log("oldState", oldState.channel, "newState", newState.channel);
 
-            removedUser = `\n➖ ${VoiceUser.nickname || VoiceUser.displayName}`;
+  const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
+  const prevVoiceMembers = tempFile?.prevVoiceMembers;
+  const lastMessageId = tempFile?.lastMessageId;
 
-            MovedUser = VoiceUser;
-          }
-        });
-      } else if (prevVoiceMembers.length < UpdatedChannel.members.size) {
-        UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
-          if (
-            !prevVoiceMembers.some(
-              (prevVoiceUser) => prevVoiceUser.userId == VoiceUserKey
-            )
-          ) {
-            console.log(
-              `${VoiceUser.nickname || VoiceUser.user.username} joined`
-            );
+  let TextOutput = "Зараз у дискорді:\n\n";
+  let addedUser = null;
+  let removedUser = null;
+  let MovedUser;
 
-            addedUser = `➕ ${
-              VoiceUser.nickname || VoiceUser.user.username
-            }\n\n`;
+  if (prevVoiceMembers) {
+    if (prevVoiceMembers.length > UpdatedChannel.members.size) {
+      prevVoiceMembers.forEach((VoiceUser) => {
+        if (!UpdatedChannel.members.has(VoiceUser.userId)) {
+          console.log(`${displayUser(VoiceUser)} left`);
 
-            MovedUser = VoiceUser;
-          }
-        });
-      }
-
-      TextOutput += addedUser || "";
-
-      UpdatedChannel.members.forEach((VoiceUser) => {
-        if (VoiceUser.id != MovedUser.id) {
-          TextOutput += `${VoiceUser.nickname || VoiceUser.user.username}\n`;
+          removedUser = `\n➖ ${displayUser(VoiceUser)}`;
+          MovedUser = VoiceUser;
         }
       });
+    } else if (prevVoiceMembers.length < UpdatedChannel.members.size) {
+      UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
+        if (
+          !prevVoiceMembers.some(
+            (prevVoiceUser) => prevVoiceUser.userId == VoiceUserKey
+          )
+        ) {
+          console.log(`${displayUser(VoiceUser)} joined`);
 
-      TextOutput += removedUser || "";
+          addedUser = `➕ ${displayUser(VoiceUser)}\n`;
+          MovedUser = VoiceUser;
+        }
+      });
+    }
+
+    TextOutput += addedUser || "";
+
+    UpdatedChannel.members.forEach((VoiceUser) => {
+      if (VoiceUser.id == MovedUser?.id) return;
+      TextOutput += displayUser(VoiceUser);
+    });
+
+    TextOutput += removedUser || "";
+  } else {
+    if (UpdatedChannel.members.size != 0) {
+      UpdatedChannel.members.forEach((VoiceUser) => {
+        TextOutput += displayUser(VoiceUser);
+      });
+    }
+  }
+
+  // If all users left voice
+
+  if (UpdatedChannel.members.size == 0) {
+    TextOutput = "Дискорд спить 😴";
+  }
+
+  try {
+    const messageSend = bot.telegram.sendMessage("-1001217699907", TextOutput, {
+      parse_mode: "HTML",
+    });
+
+    if (lastMessageId) {
+      const messageDelete = bot.telegram.deleteMessage(
+        "-1001217699907",
+        lastMessageId
+      );
+
+      const promiseRes = await Promise.all([messageSend, messageDelete]);
+      temp.lastMessageId = promiseRes[0].message_id;
     } else {
-      if (UpdatedChannel.members.size != 0) {
-        UpdatedChannel.members.forEach((VoiceUser) => {
-          TextOutput += `${VoiceUser.nickname || VoiceUser.user.username}\n`;
-        });
-      }
+      const promiseRes = await messageSend;
+      temp.lastMessageId = promiseRes.message_id;
     }
 
     // If all users left voice
@@ -283,21 +303,3 @@ client.login(token);
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
-
-// if (prevVoiceMembers) {
-//     if (prevVoiceMembers.size > UpdatedChannel.members.size) {
-//         prevVoiceMembers.forEach((VoiceUser, VoiceUserKey) => {
-//             if (!UpdatedChannel.members.has(VoiceUserKey)) {
-//                 console.log(`${VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username} left`);
-//                 MovedUser = VoiceUser;
-//             }
-//         });
-//     } else if (prevVoiceMembers.size < UpdatedChannel.members.size) {
-//         UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
-//             if (!prevVoiceMembers.has(VoiceUserKey)) {
-//                 console.log(`${VoiceUser.nickname ? VoiceUser.nickname : VoiceUser.user.username} joined`);
-//                 MovedUser = VoiceUser;
-//             }
-//         });
-//     }
-// }
