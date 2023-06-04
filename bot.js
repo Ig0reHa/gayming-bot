@@ -26,112 +26,99 @@ fs.writeFileSync("./temp.json", "{}");
 
 bot.start((ctx) => ctx.reply("Слава Україні!"));
 
-bot.on(["message", "channel_post"], async (ctx) => {
-  const hasKB = ctx.message.forward_from_chat.title
-    .toLowerCase()
-    .includes("кб");
-  const hasTopor = ctx.message.forward_from_chat.title
-    .toLowerCase()
-    .includes("топор");
+const sendFreeGames = (chatId) => {
+  epicFreeGames
+    .getGames("US", true)
+    .then(async (res) => {
+      // Бесплатные игры на сегодня
 
-  if (ctx.message.hasOwnProperty("forward_from_chat") && (hasTopor || hasKB)) {
-    if (hasTopor) {
-      await ctx.reply(
-        `@${ctx.message.from.username}, ты еблан из топора кидать ?`
+      let gameTitles = "Сьогодні безкоштовно:\n";
+      let gameThumbnails = [];
+
+      for (let i = 0; i < res.currentGames.length; i++) {
+        const game = res.currentGames[i];
+
+        gameTitles += `\n<a href="https://store.epicgames.com/en-US/p/${game.productSlug}">${game.title}</a>`;
+        gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
+      }
+
+      gameThumbnails[0].caption = gameTitles;
+      gameThumbnails[0].parse_mode = "HTML";
+
+      await bot.telegram.sendMediaGroup(chatId, gameThumbnails);
+
+      // Будущие бесплатные игры
+
+      gameTitles = "Незбаром буде безкоштовно:\n";
+      gameThumbnails = [];
+
+      for (let i = 0; i < res.nextGames.length; i++) {
+        const game = res.nextGames[i];
+
+        gameTitles += `\n<a href="https://store.epicgames.com/en-US/p/${game.productSlug}">${game.title}</a>`;
+        gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
+      }
+
+      gameThumbnails[0].caption = gameTitles;
+      gameThumbnails[0].parse_mode = "HTML";
+
+      await bot.telegram.sendMediaGroup(chatId, gameThumbnails);
+    })
+    .catch((err) => {
+      console.log(`epicFreeGames - error \n${err}`);
+    });
+};
+
+const regex_emoji =
+  /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/u;
+
+bot.on(["message", "edited_message"], (ctx) => {
+  if (ctx?.update?.edited_message?.hasOwnProperty("text")) {
+    if (regex_emoji.test(ctx.update.edited_message.text)) {
+      bot.telegram.deleteMessage(
+        "-1001217699907",
+        ctx.update.edited_message.message_id
       );
-    } else {
-      await ctx.reply(`@${ctx.message.from.username}, ты еблан из кб кидать ?`);
     }
-
-    await bot.telegram.deleteMessage(
-      ctx.message.chat.id,
-      ctx.message.message_id
-    );
   }
 
-  if (ctx.message.hasOwnProperty("text")) {
+  if (ctx?.message?.animation || ctx?.message?.sticker) {
+    bot.telegram.deleteMessage("-1001217699907", ctx.message.message_id);
+  }
+
+  if (ctx.message?.hasOwnProperty("text")) {
+    if (regex_emoji.test(ctx.message.text)) {
+      bot.telegram.deleteMessage("-1001217699907", ctx.message.message_id);
+    }
+
     switch (ctx.message.text.toLowerCase()) {
       case "во що пограти":
-        await ctx.reply(
+        ctx.reply(
           `У ${GamesToPlay[Math.floor(Math.random() * GamesToPlay.length)]}`,
           { reply_to_message_id: ctx.message.message_id }
         );
         break;
       case "🤡":
-        await ctx.reply(`${ctx.message.from.first_name}, сам ти клоун`, {
+        ctx.reply(`${ctx.message.from.first_name}, сам ти клоун`, {
           reply_to_message_id: ctx.message.message_id,
         });
         break;
       case "да":
-        await ctx.reply(`Пізда`, {
+        ctx.reply(`Пізда`, {
           reply_to_message_id: ctx.message.message_id,
         });
         break;
       case "нет":
-        await ctx.reply(`Підора отвєт`, {
+        ctx.reply(`Підора отвєт`, {
           reply_to_message_id: ctx.message.message_id,
         });
         break;
       default:
         break;
     }
-  }
 
-  if (
-    ctx.message.hasOwnProperty("text") &&
-    ctx.message.text.toLowerCase().includes("халява")
-  ) {
-    epicFreeGames
-      .getGames("US", true)
-      .then(async (res) => {
-        let gameTitlesNow = "Сьогодні безкоштовно:\n";
-        let gameThumbnailsNow = [];
-
-        for (let i = 0; i < res.currentGames.length; i++) {
-          const game = res.currentGames[i];
-
-          gameTitlesNow += `\n<a href="https://store.epicgames.com/en-US/p/${game.catalogNs.mappings[0].pageSlug}">${game.title}</a>`;
-          gameThumbnailsNow.push({
-            type: "photo",
-            media: game.keyImages[0].url,
-          });
-        }
-
-        gameThumbnailsNow[0].caption = gameTitlesNow;
-        gameThumbnailsNow[0].parse_mode = "HTML";
-
-        // --------------------------------------------
-
-        let gameTitlesComing = "Незбаром буде безкоштовно:\n";
-        let gameThumbnailsComing = [];
-
-        for (let i = 0; i < res.nextGames.length; i++) {
-          const game = res.nextGames[i];
-
-          gameTitlesComing += `\n<a href="https://store.epicgames.com/en-US/p/${game.catalogNs.mappings[0].pageSlug}">${game.title}</a>`;
-          gameThumbnailsComing.push({
-            type: "photo",
-            media: game.keyImages[0].url,
-          });
-        }
-
-        gameThumbnailsComing[0].caption = gameTitlesComing;
-        gameThumbnailsComing[0].parse_mode = "HTML";
-
-        const sendFreeGamesNow = bot.telegram.sendMediaGroup(
-          ctx.message.chat.id,
-          gameThumbnailsNow
-        );
-        const sendFreeGamesComing = bot.telegram.sendMediaGroup(
-          ctx.message.chat.id,
-          gameThumbnailsComing
-        );
-
-        await Promise.all([sendFreeGamesNow, sendFreeGamesComing]);
-      })
-      .catch((err) => {
-        console.log(`epicFreeGames - error \n${err}`);
-      });
+    ctx.message.text.toLowerCase().includes("халява") &&
+      sendFreeGames(ctx.message.chat.id);
   }
 });
 
@@ -199,9 +186,10 @@ const displayUser = (VoiceUser) => {
   return userText;
 };
 
-client.on("voiceStateUpdate", async (oldState, newState) => {
-  let UpdatedChannel = newState.channel || oldState.channel;
-  if (!UpdatedChannel || UpdatedChannel.id != "834469105414569995") return;
+    let TextOutput = "Зараз у дискорді:\n\n";
+    let addedUser = null;
+    let removedUser = null;
+    let MovedUser;
 
   console.log("oldState", oldState.channel, "newState", newState.channel);
 
@@ -279,10 +267,35 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       temp.lastMessageId = promiseRes.message_id;
     }
 
-    temp.prevVoiceMembers = UpdatedChannel.members;
-    fs.writeFileSync("./temp.json", JSON.stringify(temp, null, 2));
-  } catch (e) {
-    console.log(e);
+    // If all users left voice
+
+    if (UpdatedChannel.members.size == 0) {
+      TextOutput = "Дискорд спить 😴";
+    }
+
+    bot.telegram
+      .sendMessage("-1001217699907", TextOutput, { parse_mode: "HTML" })
+      .then(
+        function (msg) {
+          if (lastMessageId) {
+            try {
+              bot.telegram.deleteMessage("-1001217699907", lastMessageId);
+            } catch (error) {
+              console.log(`Error deleting message ${lastMessageId}`);
+            }
+          }
+
+          temp.lastMessageId = msg.message_id;
+        },
+        function (fail) {
+          console.log(fail);
+        }
+      )
+      .then(function () {
+        temp.prevVoiceMembers = UpdatedChannel.members;
+
+        fs.writeFileSync("./temp.json", JSON.stringify(temp, null, 2));
+      });
   }
 });
 
