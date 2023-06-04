@@ -100,6 +100,14 @@ bot.on(["message", "edited_message"], (ctx) => {
     ctx.message.text.toLowerCase().includes("халява") &&
       sendFreeGames(ctx.message.chat.id);
   }
+
+  // Bulling
+
+  // if (ctx.message.hasOwnProperty('from') && ( ctx.message.from.username == 'sanchezszs' || ctx.message.from.username == 'littheagent' ) ) {
+  //     ctx.reply(`🤡`, { reply_to_message_id: ctx.message.message_id });
+  // }
+
+  // Назар id - 429928542
 });
 
 bot.launch();
@@ -144,6 +152,8 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply(
       `Your tag: ${interaction.user.tag}\nYour id: ${interaction.user.id}`
     );
+  } else if (commandName === "voice") {
+    await interaction.reply(`Voice info: none`);
   }
 });
 
@@ -152,99 +162,69 @@ let temp = {
   lastMessageId: null,
 };
 
-const displayUser = (VoiceUser) => {
-  let userText = "";
-  userText += `${VoiceUser.nickname || VoiceUser.user.username}`;
-  if (VoiceUser?.voice?.selfMute || VoiceUser?.voice?.serverMute)
-    userText += " 🔇";
-  if (VoiceUser?.voice?.selfDeaf || VoiceUser?.voice?.serverDeaf)
-    userText += " 🙉";
-  if (VoiceUser?.voice?.selfVideo) userText += " 📷";
-  if (VoiceUser?.voice?.streaming) userText += " 🖥";
-  userText += "\n";
+client.on("voiceStateUpdate", (oldState, newState) => {
+  let UpdatedChannel = newState.channel ? newState.channel : oldState.channel;
 
-  return userText;
-};
+  if (
+    !(newState.channel && oldState.channel) &&
+    UpdatedChannel &&
+    UpdatedChannel.id == "834469105414569995"
+  ) {
+    const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
+    const prevVoiceMembers = tempFile?.prevVoiceMembers;
+    const lastMessageId = tempFile?.lastMessageId;
 
     let TextOutput = "Зараз у дискорді:\n\n";
     let addedUser = null;
     let removedUser = null;
     let MovedUser;
 
-  console.log("oldState", oldState.channel, "newState", newState.channel);
+    if (prevVoiceMembers) {
+      if (prevVoiceMembers.length > UpdatedChannel.members.size) {
+        prevVoiceMembers.forEach((VoiceUser) => {
+          if (!UpdatedChannel.members.has(VoiceUser.userId)) {
+            console.log(`${VoiceUser.nickname || VoiceUser.displayName} left`);
 
-  const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
-  const prevVoiceMembers = tempFile?.prevVoiceMembers;
-  const lastMessageId = tempFile?.lastMessageId;
+            removedUser = `\n➖ ${VoiceUser.nickname || VoiceUser.displayName}`;
 
-  let TextOutput = "Зараз у дискорді:\n\n";
-  let addedUser = null;
-  let removedUser = null;
-  let MovedUser;
+            MovedUser = VoiceUser;
+          }
+        });
+      } else if (prevVoiceMembers.length < UpdatedChannel.members.size) {
+        UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
+          if (
+            !prevVoiceMembers.some(
+              (prevVoiceUser) => prevVoiceUser.userId == VoiceUserKey
+            )
+          ) {
+            console.log(
+              `${VoiceUser.nickname || VoiceUser.user.username} joined`
+            );
 
-  if (prevVoiceMembers) {
-    if (prevVoiceMembers.length > UpdatedChannel.members.size) {
-      prevVoiceMembers.forEach((VoiceUser) => {
-        if (!UpdatedChannel.members.has(VoiceUser.userId)) {
-          console.log(`${displayUser(VoiceUser)} left`);
+            addedUser = `➕ ${
+              VoiceUser.nickname || VoiceUser.user.username
+            }\n\n`;
 
-          removedUser = `\n➖ ${displayUser(VoiceUser)}`;
-          MovedUser = VoiceUser;
-        }
-      });
-    } else if (prevVoiceMembers.length < UpdatedChannel.members.size) {
-      UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
-        if (
-          !prevVoiceMembers.some(
-            (prevVoiceUser) => prevVoiceUser.userId == VoiceUserKey
-          )
-        ) {
-          console.log(`${displayUser(VoiceUser)} joined`);
+            MovedUser = VoiceUser;
+          }
+        });
+      }
 
-          addedUser = `➕ ${displayUser(VoiceUser)}\n`;
-          MovedUser = VoiceUser;
-        }
-      });
-    }
+      TextOutput += addedUser || "";
 
-    TextOutput += addedUser || "";
-
-    UpdatedChannel.members.forEach((VoiceUser) => {
-      if (VoiceUser.id == MovedUser?.id) return;
-      TextOutput += displayUser(VoiceUser);
-    });
-
-    TextOutput += removedUser || "";
-  } else {
-    if (UpdatedChannel.members.size != 0) {
       UpdatedChannel.members.forEach((VoiceUser) => {
-        TextOutput += displayUser(VoiceUser);
+        if (VoiceUser.id != MovedUser.id) {
+          TextOutput += `${VoiceUser.nickname || VoiceUser.user.username}\n`;
+        }
       });
-    }
-  }
 
-  // If all users left voice
-
-  if (UpdatedChannel.members.size == 0) {
-    TextOutput = "Дискорд спить 😴";
-  }
-
-  try {
-    const messageSend = bot.telegram.sendMessage("-1001217699907", TextOutput, {
-      parse_mode: "HTML",
-    });
-
-    if (lastMessageId) {
-      const messageDelete = bot.telegram.deleteMessage(
-        "-1001217699907",
-        lastMessageId
-      );
-
-      const promiseRes = await Promise.all([messageSend, messageDelete]);
-      temp.lastMessageId = promiseRes[0].message_id;
+      TextOutput += removedUser || "";
     } else {
-      const promiseRes = await messageSend;
-      temp.lastMessageId = promiseRes.message_id;
+      if (UpdatedChannel.members.size != 0) {
+        UpdatedChannel.members.forEach((VoiceUser) => {
+          TextOutput += `${VoiceUser.nickname || VoiceUser.user.username}\n`;
+        });
+      }
     }
 
     // If all users left voice
