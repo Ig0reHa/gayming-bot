@@ -1,37 +1,23 @@
-// Heroku port setup
+import { Client, Collection, GatewayIntentBits, GuildMember } from "discord.js";
+import "dotenv/config";
+import { EpicFreeGames } from "epic-free-games";
+import { Telegraf } from "telegraf";
+import GamesToPlay from "./data";
 
-const http = require("http");
-const PORT = process.env.PORT || 3000;
-const server = http.createServer((req, res) => {});
-
-server.listen(PORT, () => {
-  console.log(`Our app is running on port ${PORT}`);
-});
-
-// Telegram Bot
-
-require("dotenv").config();
-
-const { Telegraf } = require("telegraf");
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Libs import
-
-const GamesToPlay = require("./data.js");
-const epicFreeGames = require("epic-free-games");
-const fs = require("fs");
-fs.writeFileSync("./temp.json", "{}");
+const epicFreeGames = new EpicFreeGames({
+  country: "US",
+  locale: "en-US",
+  includeAll: true,
+});
 
 // Start message
 
-bot.start((ctx) => ctx.reply("Слава Україні!"));
-
-const sendFreeGames = (chatId) => {
+const sendFreeGames = (chatId: number) => {
   epicFreeGames
-    .getGames("US", true)
+    .getGames()
     .then(async (res) => {
-      // Бесплатные игры на сегодня
-
       let gameTitles = "Сьогодні безкоштовно:\n";
       let gameThumbnails = [];
 
@@ -46,8 +32,6 @@ const sendFreeGames = (chatId) => {
       gameThumbnails[0].parse_mode = "HTML";
 
       await bot.telegram.sendMediaGroup(chatId, gameThumbnails);
-
-      // Будущие бесплатные игры
 
       gameTitles = "Незбаром буде безкоштовно:\n";
       gameThumbnails = [];
@@ -69,10 +53,13 @@ const sendFreeGames = (chatId) => {
     });
 };
 
+bot.start((ctx) => ctx.reply("Слава Україні!"));
+
 bot.on(["message", "edited_message"], (ctx) => {
   if (ctx.message?.hasOwnProperty("text")) {
+    // @ts-ignore
     switch (ctx.message.text.toLowerCase()) {
-      case "во що пограти":
+      case "у що пограти":
         ctx.reply(
           `У ${GamesToPlay[Math.floor(Math.random() * GamesToPlay.length)]}`,
           { reply_to_message_id: ctx.message.message_id }
@@ -97,31 +84,19 @@ bot.on(["message", "edited_message"], (ctx) => {
         break;
     }
 
+    // @ts-ignore
     ctx.message.text.toLowerCase().includes("халява") &&
       sendFreeGames(ctx.message.chat.id);
   }
-
-  // Bulling
-
-  // if (ctx.message.hasOwnProperty('from') && ( ctx.message.from.username == 'sanchezszs' || ctx.message.from.username == 'littheagent' ) ) {
-  //     ctx.reply(`🤡`, { reply_to_message_id: ctx.message.message_id });
-  // }
-
-  // Назар id - 429928542
 });
 
 bot.launch();
-
-const { Client, GatewayIntentBits } = require("discord.js");
-
-const token = process.env.DISCORD_TOKEN;
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildBans,
     GatewayIntentBits.GuildIntegrations,
     GatewayIntentBits.GuildInvites,
     GatewayIntentBits.GuildMessageReactions,
@@ -157,7 +132,7 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-let temp = {
+var temp = {
   prevVoiceMembers: null,
   lastMessageId: null,
 };
@@ -170,19 +145,19 @@ client.on("voiceStateUpdate", (oldState, newState) => {
     UpdatedChannel &&
     UpdatedChannel.id == "834469105414569995"
   ) {
-    const tempFile = JSON.parse(fs.readFileSync("./temp.json"));
-    const prevVoiceMembers = tempFile?.prevVoiceMembers;
-    const lastMessageId = tempFile?.lastMessageId;
+    const prevVoiceMembers: Collection<string, GuildMember> | null =
+      temp.prevVoiceMembers;
+    const lastMessageId: number | null = temp.lastMessageId;
 
-    let TextOutput = "Зараз у дискорді:\n\n";
-    let addedUser = null;
-    let removedUser = null;
-    let MovedUser;
+    let TextOutput: string = "Зараз у дискорді:\n\n";
+    let addedUser: string = null;
+    let removedUser: string = null;
+    let MovedUser: GuildMember;
 
     if (prevVoiceMembers) {
-      if (prevVoiceMembers.length > UpdatedChannel.members.size) {
+      if (prevVoiceMembers.size > UpdatedChannel.members.size) {
         prevVoiceMembers.forEach((VoiceUser) => {
-          if (!UpdatedChannel.members.has(VoiceUser.userId)) {
+          if (!UpdatedChannel.members.has(VoiceUser.user.id)) {
             console.log(`${VoiceUser.nickname || VoiceUser.displayName} left`);
 
             removedUser = `\n➖ ${VoiceUser.nickname || VoiceUser.displayName}`;
@@ -190,11 +165,11 @@ client.on("voiceStateUpdate", (oldState, newState) => {
             MovedUser = VoiceUser;
           }
         });
-      } else if (prevVoiceMembers.length < UpdatedChannel.members.size) {
+      } else if (prevVoiceMembers.size < UpdatedChannel.members.size) {
         UpdatedChannel.members.forEach((VoiceUser, VoiceUserKey) => {
           if (
             !prevVoiceMembers.some(
-              (prevVoiceUser) => prevVoiceUser.userId == VoiceUserKey
+              (prevVoiceUser) => prevVoiceUser.user.id == VoiceUserKey
             )
           ) {
             console.log(
@@ -213,7 +188,7 @@ client.on("voiceStateUpdate", (oldState, newState) => {
       TextOutput += addedUser || "";
 
       UpdatedChannel.members.forEach((VoiceUser) => {
-        if (VoiceUser.id != MovedUser.id) {
+        if (VoiceUser.user.id != MovedUser.user.id) {
           TextOutput += `${VoiceUser.nickname || VoiceUser.user.username}\n`;
         }
       });
@@ -236,10 +211,10 @@ client.on("voiceStateUpdate", (oldState, newState) => {
     bot.telegram
       .sendMessage("-1001217699907", TextOutput, { parse_mode: "HTML" })
       .then(
-        function (msg) {
+        async function (msg) {
           if (lastMessageId) {
             try {
-              bot.telegram.deleteMessage("-1001217699907", lastMessageId);
+              await bot.telegram.deleteMessage("-1001217699907", lastMessageId);
             } catch (error) {
               console.log(`Error deleting message ${lastMessageId}`);
             }
@@ -253,13 +228,11 @@ client.on("voiceStateUpdate", (oldState, newState) => {
       )
       .then(function () {
         temp.prevVoiceMembers = UpdatedChannel.members;
-
-        fs.writeFileSync("./temp.json", JSON.stringify(temp, null, 2));
       });
   }
 });
 
-client.login(token);
+client.login(process.env.DISCORD_TOKEN);
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));

@@ -1,28 +1,33 @@
 {
-  "name": "telegram-bot",
+  "name": "gayming-bot",
   "version": "1.0.0",
   "description": "",
   "main": "bot.js",
-  "engines": {
-    "node": "18.x"
-  },
   "scripts": {
-    "start": "node bot.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon ./src/bot.ts",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ig0reHa/gayming-bot.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ig0reHa/gayming-bot/issues"
+  },
+  "homepage": "https://github.com/Ig0reHa/gayming-bot#readme",
+  "devDependencies": {
+    "@types/node": "^20.6.2",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
   "dependencies": {
-    "@discordjs/builders": "^1.4.0",
-    "@discordjs/rest": "^1.5.0",
-    "discord-api-types": "^0.37.27",
-    "discord.js": "^14.7.1",
-    "dotenv": "^16.0.3",
-    "epic-free-games": "^3.1.1",
-    "nconf": "^0.12.0",
-    "node-cache": "^5.1.2",
-    "telegraf": "^4.11.2",
-    "telegram": "^2.15.5"
+    "discord.js": "^14.13.0",
+    "dotenv": "^16.3.1",
+    "epic-free-games": "^4.0.1",
+    "telegraf": "^4.13.1"
   }
 }
