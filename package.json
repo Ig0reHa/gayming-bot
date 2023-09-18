@@ -29,5 +29,8 @@
     "dotenv": "^16.3.1",
     "epic-free-games": "^4.0.1",
     "telegraf": "^4.13.1"
+  },
+  "engines": {
+    "node": "20.5.1"
   }
 }
