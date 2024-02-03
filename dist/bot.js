@@ -5,45 +5,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 require("dotenv/config");
-const epic_free_games_1 = require("epic-free-games");
+const express_1 = __importDefault(require("express"));
 const telegraf_1 = require("telegraf");
 const data_1 = __importDefault(require("./data"));
-const bot = new telegraf_1.Telegraf(process.env.BOT_TOKEN);
-const epicFreeGames = new epic_free_games_1.EpicFreeGames({
-    country: "US",
-    locale: "en-US",
-    includeAll: true,
+const PORT = process.env.PORT || 3000;
+const app = (0, express_1.default)();
+app.use(express_1.default.json());
+app.listen(PORT, () => {
+    console.log("Server Listening on PORT:", PORT);
 });
+app.options("*", function (req, res) {
+    res.send(200);
+});
+app.get("/", (err, res) => {
+    res.status(200);
+    res.json({ working: true });
+    res.end();
+});
+app.post("/", (err, res) => {
+    res.status(200);
+    res.send("working");
+    res.end();
+});
+app.put("/", (err, res) => {
+    res.status(200);
+    res.send("working");
+    res.end();
+});
+const bot = new telegraf_1.Telegraf(process.env.BOT_TOKEN);
 // Start message
-const sendFreeGames = (chatId) => {
-    epicFreeGames
-        .getGames()
-        .then(async (res) => {
-        let gameTitles = "Сьогодні безкоштовно:\n";
-        let gameThumbnails = [];
-        for (let i = 0; i < res.currentGames.length; i++) {
-            const game = res.currentGames[i];
-            gameTitles += `\n<a href="https://store.epicgames.com/en-US/p/${game.productSlug}">${game.title}</a>`;
-            gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
-        }
-        gameThumbnails[0].caption = gameTitles;
-        gameThumbnails[0].parse_mode = "HTML";
-        await bot.telegram.sendMediaGroup(chatId, gameThumbnails);
-        gameTitles = "Незбаром буде безкоштовно:\n";
-        gameThumbnails = [];
-        for (let i = 0; i < res.nextGames.length; i++) {
-            const game = res.nextGames[i];
-            gameTitles += `\n<a href="https://store.epicgames.com/en-US/p/${game.productSlug}">${game.title}</a>`;
-            gameThumbnails.push({ type: "photo", media: game.keyImages[0].url });
-        }
-        gameThumbnails[0].caption = gameTitles;
-        gameThumbnails[0].parse_mode = "HTML";
-        await bot.telegram.sendMediaGroup(chatId, gameThumbnails);
-    })
-        .catch((err) => {
-        console.log(`epicFreeGames - error \n${err}`);
-    });
-};
 bot.start((ctx) => ctx.reply("Слава Україні!"));
 bot.on(["message", "edited_message"], (ctx) => {
     if (ctx.message?.hasOwnProperty("text")) {
@@ -57,22 +47,19 @@ bot.on(["message", "edited_message"], (ctx) => {
                     reply_to_message_id: ctx.message.message_id,
                 });
                 break;
-            case "да":
-                ctx.reply(`Пізда`, {
-                    reply_to_message_id: ctx.message.message_id,
-                });
-                break;
-            case "нет":
-                ctx.reply(`Підора отвєт`, {
-                    reply_to_message_id: ctx.message.message_id,
-                });
-                break;
+            // case "да":
+            //   ctx.reply(`Пізда`, {
+            //     reply_to_message_id: ctx.message.message_id,
+            //   });
+            //   break;
+            // case "нет":
+            //   ctx.reply(`Підора отвєт`, {
+            //     reply_to_message_id: ctx.message.message_id,
+            //   });
+            //   break;
             default:
                 break;
         }
-        // @ts-ignore
-        ctx.message.text.toLowerCase().includes("халява") &&
-            sendFreeGames(ctx.message.chat.id);
     }
 });
 bot.launch();
@@ -89,27 +76,11 @@ const client = new discord_js_1.Client({
         discord_js_1.GatewayIntentBits.GuildScheduledEvents,
         discord_js_1.GatewayIntentBits.GuildVoiceStates,
         discord_js_1.GatewayIntentBits.GuildWebhooks,
+        discord_js_1.GatewayIntentBits.GuildEmojisAndStickers,
     ],
 });
 client.once("ready", () => {
     console.log("Dicord Ready!");
-});
-client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isCommand())
-        return;
-    const { commandName } = interaction;
-    if (commandName === "ping") {
-        await interaction.reply("Pong!");
-    }
-    else if (commandName === "server") {
-        await interaction.reply(`Server name: ${interaction.guild.name}\nTotal members: ${interaction.guild.memberCount}`);
-    }
-    else if (commandName === "user") {
-        await interaction.reply(`Your tag: ${interaction.user.tag}\nYour id: ${interaction.user.id}`);
-    }
-    else if (commandName === "voice") {
-        await interaction.reply(`Voice info: none`);
-    }
 });
 var temp = {
     prevVoiceMembers: null,

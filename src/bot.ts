@@ -42,6 +42,7 @@ bot.start((ctx) => ctx.reply("Слава Україні!"));
 
 bot.on(["message", "edited_message"], (ctx) => {
   if (ctx.message?.hasOwnProperty("text")) {
+    // @ts-ignore
     switch (ctx.message.text.toLowerCase()) {
       case "у що пограти":
         ctx.reply(
