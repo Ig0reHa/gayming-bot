@@ -1,7 +1,39 @@
 import { Client, Collection, GatewayIntentBits, GuildMember } from "discord.js";
 import "dotenv/config";
+import express from "express";
 import { Telegraf } from "telegraf";
 import GamesToPlay from "./data";
+
+const PORT = process.env.PORT || 3000;
+
+const app = express();
+app.use(express.json());
+
+app.listen(PORT, () => {
+  console.log("Server Listening on PORT:", PORT);
+});
+
+app.options("*", function (req, res) {
+  res.send(200);
+});
+
+app.get("/", (err, res) => {
+  res.status(200);
+  res.json({ working: true });
+  res.end();
+});
+
+app.post("/", (err, res) => {
+  res.status(200);
+  res.send("working");
+  res.end();
+});
+
+app.put("/", (err, res) => {
+  res.status(200);
+  res.send("working");
+  res.end();
+});
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
